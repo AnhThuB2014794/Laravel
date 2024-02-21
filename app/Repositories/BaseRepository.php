@@ -19,6 +19,18 @@ class BaseRepository implements BaseRepositoryInterface{
     public function all(){
         return $this->model->all();
     }
+    public function pagination(
+        array $column = ['*'],
+        array $condition = [],
+        array $join = [],
+        int $prerPage = 20
+    ){
+        $query = $this->model->select($column)->where($condition);
+        if(!empty($join)){
+            $query->join(...$join);
+        }
+        return $query->paginate($prerPage);
+    }
 
     public function findById(
         int $modelId,

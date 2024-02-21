@@ -18,21 +18,67 @@ class UserService implements UserServiceInterface
     public function __construct(UserRepository $userRepository){
         $this->userRepository = $userRepository;
     }
-
     public function paginate(){
-        $users = $this->userRepository->getAllPaginate();
-        return $users;
+        $user = $this->userRepository->getAllPaginate();
+        return $user;
     }
+    // public function paginate(){
+    //     $users = $this->userRepository->pagination([
+    //         'id',
+    //         'email',
+    //         'phone',
+    //         'address',
+    //         'name'
+    //     ]);
+
+    //     return $users;
+    // }
 
     public function create($request){
         DB::beginTransaction();
         try{
 
             $payload = $request->except(['_token','re_password']);
-            $carbonDate = Carbon::createFromFormat('Y-m-d', $payload['birthday']);
-            $payload['birthday'] = $carbonDate->format('Y-m-d H:i:s');
+            $payload['birthday'] = $this->convertBirthdayDate($payload['birthday']);
             $payload['password'] = Hash::make($payload['password']);
             $user = $this->userRepository->create($payload);
+            DB::commit();
+            return true;
+        }catch(\Exception $e){
+            DB::rollBack();
+            echo $e->getMessage();
+            die();
+            return false;
+        }
+    }
+    public function update($id,$request){
+        DB::beginTransaction();
+        try{
+            $payload = $request->except(['_token',]);
+            $payload['birthday'] = $this->convertBirthdayDate($payload['birthday']);
+            
+            $user = $this->userRepository->update($id,$payload);
+            DB::commit();
+            return true;
+        }catch(\Exception $e){
+            DB::rollBack();
+            echo $e->getMessage();
+            die();
+            return false;
+        }
+    }
+
+    private function convertBirthdayDate($birthday = ''){
+        $carbonDate = Carbon::createFromFormat('Y-m-d', $birthday);
+        $birthday = $carbonDate->format('Y-m-d H:i:s');
+        return $birthday;
+    }
+
+    public function destroy($id){
+        DB::beginTransaction();
+        try{
+            
+            $user = $this->userRepository->delete($id);
             DB::commit();
             return true;
         }catch(\Exception $e){
